@@ -1,0 +1,135 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Comic Sans MS', cursive, sans-serif; 
+}
+
+.background {
+  position: relative;
+  width: 1280px;
+  height: 717px;
+  border: 2px solid #000;
+  background-image: url('img/index01/background.jpg'); 
+  background-size: cover;
+  background-position: center;
+}
+
+.block {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.block:hover {
+  opacity: 1;
+}
+
+#block1 { top: -40px; left: 210px; width: 400px;height: 400px;}
+#block2 { bottom: 210px; left: 330px; width: 100px;height: 100px;}
+#block3 { bottom: 150px; left: 150px; width: 210px;height: 210px; }
+#block4 { bottom: 20px; right: 480px; width: 260px;height: 220px;}
+#block5 { top: 260px; left: 600px; width: 220px;height: 220px;}
+
+/* 表单外部背景块 - 铺满主容器下部三分之一 */
+.quiz-outer-block {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%; /* 下部三分之一 */
+  background-image: url('img/index01/outer-block.png'); 
+  background-size: 99% 99%;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 5;
+}
+
+/* 表单容器 - 比外部块小并跟随移动 */
+.quiz-container {
+  position: absolute;
+  width: 90%; 
+  height: 70%; /* 比外部块稍小 */
+  left: 5%;
+  bottom: 2.5%;
+  border: none; 
+  margin: 0;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 10;
+  overflow: visible; 
+}
+
+/* 表单内部背景 */
+.quiz-inner-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url('img/index01/inner-form.png'); 
+  background-size: cover;
+  background-position: center;
+  z-index: -1; 
+}
+
+.quiz-container h3 {
+  margin: 0;
+  padding: 5px;
+  text-align: center; /* 让问题居中 */
+  font-size: 30px; /* 让问题字体更大一些 */
+  color: #A7E9AF;
+}
+
+.quiz-container #quizOptions {
+  margin:  0;
+  padding: 5px;
+  font-size: 18px;
+  line-height: 2; /* 让选项变得更分散，排布自然一些 */
+}
+
+#submitBtn {
+  margin: 0px;
+  padding: 5px 10px; /* 增大按钮内边距 */
+  cursor: pointer;
+  border-radius: 20px; /* 让按钮更圆润，更可爱 */
+  background-color:#B5EAD7; /* 更改按钮背景颜色 */
+  color: white; /* 更改按钮文字颜色 */
+  border: none; /* 去除边框 */
+  font-size: 18px; /* 增大按钮文字大小 */
+}
+
+/* 表单上部图片容器 */
+.form-top-image {
+  width: 500px;
+  height: 500px; 
+  position: relative;
+  top: 0px;
+  left: 450px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  z-index: -1;
+}
+
+.form-top-image img {
+  max-width: 90%;
+  max-height: 100%;
+  object-fit: contain;
+}
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  z-index: 2;
+}
