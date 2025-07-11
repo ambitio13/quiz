@@ -10,9 +10,12 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-# ------------------ Flask ------------------
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__, static_folder='.', static_url_path='')
+CORS(app)  # 启用 CORS
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index01.html')
 
 # ------------------ 数据库配置 ------------------
 # 优先读环境变量，没有就用默认值
