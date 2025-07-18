@@ -97,7 +97,7 @@ def finish_session():
     (id,name,gender,duration,
      tree_answers,fish_answers,stone_answers,moss_answers,stream_answers,
      tree_counts,fish_counts,stone_counts,moss_counts,stream_counts)
-    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """
     params = (
         str(uuid.uuid4()),
