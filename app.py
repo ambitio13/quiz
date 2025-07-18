@@ -1,8 +1,9 @@
-import os
+import os, uuid, json, time
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import mysql.connector
 import logging
+
 
 # ------------------ 日志 ------------------
 logging.basicConfig(
@@ -10,57 +11,111 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-app = Flask(__name__, static_folder='.', static_url_path='')
-CORS(app)  # 启用 CORS
+app = Flask(__name__,
+            static_folder='static',
+            template_folder='templates')
+CORS(app)
 
-@app.route('/')
-def index():
-    return send_from_directory('.', 'index01.html')
-
-# ------------------ 数据库配置 ------------------
-# 优先读环境变量，没有就用默认值
-DB_USER     = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "8520456qwebq")
-DB_HOST     = os.getenv("DB_HOST", "localhost")   # 部署时改成服务器公网或内网 IP
-DB_NAME     = os.getenv("DB_NAME", "interactive_quiz")
-
-db_config = {
-    "user":     DB_USER,
-    "password": DB_PASSWORD,
-    "host":     DB_HOST,
-    "database": DB_NAME,
+DB = {
+    "user":     os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "8520456qwebq"),
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "database": os.getenv("DB_NAME", "interactive_quiz"),
     "port":     3306,
 }
 
-# ------------------ 路由 ------------------
-@app.route("/submit", methods=["POST"])
-def submit():
+
+sessions = {}
+
+# 根路由 -> 姓名页
+@app.route('/')
+def name_page():
+    return send_from_directory('templates', 'name.html')
+
+# 托管任意 .html
+@app.route('/<page>.html')
+def any_page(page):
+    return send_from_directory('templates', f'{page}.html')
+
+@app.route('/start', methods=['POST'])
+def start_session():
     data = request.json
-    block_id       = data.get("blockId")
-    selected_option = data.get("selectedOption")
+    name, gender = data.get('name'), data.get('gender')
+    if not name or gender not in {'男', '女'}:
+        return jsonify({"msg": "invalid"}), 400
+    sid = str(uuid.uuid4())
+    sessions[sid] = {
+        "name": name,
+        "gender": gender,
+        "start": time.time(),
+        "answers": {k: [] for k in ["tree", "fish", "stone", "moss", "stream"]},
+        "counts": {k: {"A": 0, "B": 0, "C": 0, "D": 0} for k in ["tree", "fish", "stone", "moss", "stream"]}
+    }
+    return jsonify({"sessionId": sid})
 
-    if not (block_id and selected_option):
-        return jsonify({"message": "Invalid data"}), 400
+@app.route('/answer', methods=['POST'])
+def collect_answer():
+    data = request.json
+    sid, block, key = data.get('sessionId'), data.get('block'), data.get('key')
+    if sid not in sessions or block not in sessions[sid]["answers"]:
+        return jsonify({"msg": "invalid"}), 400
+    sess = sessions[sid]
+    if len(sess["answers"][block]) >= 4:
+        return jsonify({"msg": "max 4"}), 400
+    sess["answers"][block].append(key)
+    sess["counts"][block][key] += 1
+    return jsonify({"msg": "ok"})
 
+@app.route('/finish', methods=['POST'])
+def finish_session():
+    sid = request.json.get('sessionId')
+    if sid not in sessions:
+        return jsonify({"msg": "no session"}), 400
+
+    sess = sessions.pop(sid)
+    duration = int(time.time() - sess["start"])
+
+    # 统一默认值：空答案 & 0 计数
+    empty_answers = {k: [] for k in ["tree", "fish", "stone", "moss", "stream"]}
+    empty_counts  = {k: "A:0|B:0|C:0|D:0" for k in ["tree", "fish", "stone", "moss", "stream"]}
+
+    # 使用实际数据或默认值
+    answers = {k: json.dumps(sess["answers"].get(k, empty_answers[k])) for k in empty_answers}
+    counts  = {k: "|".join(f"{kk}:{vv}" for kk, vv in sess["counts"].get(k, {"A":0,"B":0,"C":0,"D":0}).items())
+               for k in empty_counts}
+
+    sql = """
+    INSERT INTO index01
+    (id,name,gender,duration,
+     tree_answers,fish_answers,stone_answers,moss_answers,stream_answers,
+     tree_counts,fish_counts,stone_counts,moss_counts,stream_counts)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """
+    params = (
+        str(uuid.uuid4()),
+        sess["name"],
+        sess["gender"],
+        duration,
+        answers["tree"],
+        answers["fish"],
+        answers["stone"],
+        answers["moss"],
+        answers["stream"],
+        counts["tree"],
+        counts["fish"],
+        counts["stone"],
+        counts["moss"],
+        counts["stream"]
+    )
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
+        cnx = mysql.connector.connect(**DB)
+        cur = cnx.cursor(); cur.execute(sql, params); cnx.commit()
+        cur.close(); cnx.close()
+        return jsonify({"msg": "saved"})
+    except Exception as e:
+        print(e)
+        return jsonify({"msg": str(e)}), 500
 
-        table_name = f"block{block_id[-1]}"
-        sql = f"INSERT INTO {table_name} (selected_option) VALUES (%s)"
-        cursor.execute(sql, (selected_option,))
-        conn.commit()
 
-        cursor.close()
-        conn.close()
-        logging.info("Inserted into %s: %s", table_name, selected_option)
-        return jsonify({"message": "Data received and stored successfully!"})
-
-    except mysql.connector.Error as e:
-        logging.error("MySQL error: %s", e)
-        return jsonify({"message": "DB error"}), 500
-
-# ------------------ 启动 ------------------
-if __name__ == "__main__":
-    # 在服务器上把 host 设为 0.0.0.0 才能对外暴露
+if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=False)
