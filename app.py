@@ -78,23 +78,30 @@ def collect_answer():
 def status_click():
     data = request.json
     sid, cnt = data.get('sessionId'), data.get('count')
-    if sid not in sessions or cnt not in {1, 2, 3}:
+    if cnt not in {1, 2, 3}:
         return jsonify({"msg": "invalid"}), 400
-    sessions[sid]['status_clicks'] = cnt
+
+    sess_json = sessions.get(sid)
+    if not sess_json:
+        return jsonify({"msg": "invalid"}), 400
+
+    sess = json.loads(sess_json)
+    sess['status_clicks'] = cnt
+    sessions.setex(sid, 3600, json.dumps(sess))
     return jsonify({"msg": "ok"})
 
 @app.route('/finish', methods=['POST'])
 def finish_session():
     data = request.json
     sid = data.get('sessionId')
-    if sid not in sessions:
+
+    sess_json = sessions.get(sid)
+    if not sess_json:
         return jsonify({"msg": "no session"}), 400
 
-    # ✅ 必须先弹出会话
-    sess = sessions.pop(sid)
+    sess = json.loads(sess_json)
+    sessions.delete(sid)  # 删除 Redis key
     duration = int(time.time() - sess["start"])
-
-    # ✅ 使用会话中记录的状态点击次数
     status_clicks = sess.get('status_clicks', 0)
 
     # 默认值
