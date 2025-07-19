@@ -85,22 +85,27 @@ def status_click():
 
 @app.route('/finish', methods=['POST'])
 def finish_session():
-    sid = request.json.get('sessionId')
-    if sid not in r.keys():
+    data = request.json
+    sid = data.get('sessionId')
+    if sid not in sessions:
         return jsonify({"msg": "no session"}), 400
 
-    sess = json.loads(r.get(sid))
-    status_clicks = sess.get('status_clicks', 0)
+    # ✅ 必须先弹出会话
+    sess = sessions.pop(sid)
     duration = int(time.time() - sess["start"])
 
-    # 统一默认值：空答案 & 0 计数
-    empty_answers = {k: [] for k in ["tree", "fish", "stone", "moss", "stream"]}
-    empty_counts  = {k: "A:0|B:0|C:0|D:0" for k in ["tree", "fish", "stone", "moss", "stream"]}
+    # ✅ 使用会话中记录的状态点击次数
+    status_clicks = sess.get('status_clicks', 0)
 
-    # 使用实际数据或默认值
+    # 默认值
+    empty_answers = {k: [] for k in ["tree", "fish", "stone", "moss", "stream"]}
+    empty_counts = {k: "A:0|B:0|C:0|D:0" for k in ["tree", "fish", "stone", "moss", "stream"]}
+
     answers = {k: json.dumps(sess["answers"].get(k, empty_answers[k])) for k in empty_answers}
-    counts  = {k: "|".join(f"{kk}:{vv}" for kk, vv in sess["counts"].get(k, {"A":0,"B":0,"C":0,"D":0}).items())
-               for k in empty_counts}
+    counts = {
+        k: "|".join(f"{kk}:{vv}" for kk, vv in sess["counts"].get(k, {"A":0,"B":0,"C":0,"D":0}).items())
+        for k in empty_counts
+    }
 
     sql = """
     INSERT INTO index01
@@ -129,8 +134,11 @@ def finish_session():
     )
     try:
         cnx = mysql.connector.connect(**DB)
-        cur = cnx.cursor(); cur.execute(sql, params); cnx.commit()
-        cur.close(); cnx.close()
+        cur = cnx.cursor()
+        cur.execute(sql, params)
+        cnx.commit()
+        cur.close()
+        cnx.close()
         return jsonify({"msg": "saved"})
     except Exception as e:
         print(e)
