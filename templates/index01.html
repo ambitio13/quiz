@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>魔法森林</title>
-  <link rel="stylesheet" href="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/css/styles01.css">
+  <link rel="stylesheet" href="/static/css/styles01.css">
 </head>
 <body>
  <button id="finishBtn"
@@ -26,11 +26,21 @@
 </button>
   <div class="background">
     <!-- 保留原有方块图片 -->
-    <img class="block" id="block1" style="opacity: 0;" data-original-opacity="0" data-img-src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index01/block1.png">
-    <img class="block" id="block2" style="opacity: 0;" data-original-opacity="0" data-img-src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index01/block2.png">
-    <img class="block" id="block3" style="opacity: 0;" data-original-opacity="0" data-img-src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index01/block3.png">
-    <img class="block" id="block4" style="opacity: 0;" data-original-opacity="0" data-img-src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index01/block4.png">
-    <img class="block" id="block5" style="opacity: 0;" data-original-opacity="0" data-img-src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index01/block5.png">
+    <img class="block" id="block1" style="opacity: 0;" data-original-opacity="0" data-img-src="/static/img/index01/block1.png">
+    <img class="block" id="block2" style="opacity: 0;" data-original-opacity="0" data-img-src="/static/img/index01/block2.png">
+    <img class="block" id="block3" style="opacity: 0;" data-original-opacity="0" data-img-src="/static/img/index01/block3.png">
+    <img class="block" id="block4" style="opacity: 0;" data-original-opacity="0" data-img-src="/static/img/index01/block4.png">
+    <img class="block" id="block5" style="opacity: 0;" data-original-opacity="0" data-img-src="/static/img/index01/block5.png">
+    <!-- 新增状态块：可点 3 次，初始 status0.png -->
+    <!-- 状态块：无悬停，只点击，一直保持最后状态 -->
+    <img id="statusBlock" class="status-block"
+        style="position:absolute; top:200px; left:910px; width:128px; height:208px; cursor:pointer;"
+        src="/static/img/index01/status0.png"
+        data-img-src0="/static/img/index01/status0.png"
+        data-img-src1="/static/img/index01/status1.png"
+        data-img-src2="/static/img/index01/status2.png"
+        data-img-src3="/static/img/index01/status3.png"
+        data-count="0" />
 
     <!-- 表单外部背景块 -->
     <div class="quiz-outer-block">
@@ -54,7 +64,7 @@
   <!-- 答案弹层 -->
   
 
-  <script src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/js/script01.js"></script>
+  <script src="/static/js/script01.js"></script>
   
   <div id="answerPopup" class="answer-popup">
     <div class="answer-card">
