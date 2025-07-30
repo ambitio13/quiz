@@ -1,60 +1,124 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>欢迎光临！</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet"/>
   <style>
     html,body{height:100%;width:100%;margin:0;display:flex;align-items:center;justify-content:center;
       background:url('https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/name-bg.jpg') center/cover;}
     .card{
-      width:550px;height:550px;padding:40px;border-radius:30px;
+      width:550px;height:550px; padding:80px 40px 0 40px;border-radius:30px;
       background:url('https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/name-card-bg2.png') top/cover;
-      background-attachment:local;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      display:flex;flex-direction:column;align-items:center;
       box-shadow:0 15px 30px rgba(0,0,0,.25);
       font-family:'Fredoka One',cursive;
       transform: scale(0.8);
     }
     h2{margin:0 0 30px;font-size:32px;color:#2c1704;}
-    input,select,button{
+    input,button{
       width:80%;margin:10px 0;padding:14px 20px;border:none;border-radius:25px;
       font-size:18px;font-family:inherit;outline:none;
     }
-    input,select{background:#fff8e1;color:#5e3c06;}
-    button{background:#c69f6b;color:#fff;font-weight:700;cursor:pointer;}
+    input{background:#fff8e1;color:#5e3c06;}
+    button{background:#c69f6b;color:#fff;font-weight:700;cursor:pointer;transition:all .2s;}
     button:hover{background:#b38b5a;transform:translateY(-2px);}
+    button:disabled{background:#a0a0a0;cursor:not-allowed;}
+
+    /* 强制阅读弹窗样式 */
+    #modalOverlay{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999;
+    }
+    #modalBox{
+      width:600px;background:#fff8e1;border-radius:20px;padding:30px;
+      text-align:center;font-family:'Fredoka One',cursive;color:#2c1704;
+      box-shadow:0 10px 25px rgba(0,0,0,.4);
+      text-indent: 2rem;
+    }
+    #modalBox h3{margin:0;font-size:24px;text-align: center;}
+    #modalBox p{font-size:20px;line-height:1.5;text-align:left;}
+    #modalBox button{width:auto;padding:12px 30px;margin-top:20px;}
+    #countdownText{margin-top:10px;font-size:14px;}
   </style>
 </head>
 <body>
-  <form id="nameForm" class="card">
+  <form id="userForm" class="card">
     <h2>踏上冒险之旅！</h2>
-    <input placeholder="你的姓名" required />
-    <select required>
-      <option value="">选择性别</option>
-      <option value="男">👦 男生</option>
-      <option value="女">👧 女生</option>
-    </select>
-    <button type="submit">立即启程！</button>
+    <input name="name"  placeholder="姓名" required/>
+    <input name="age"   placeholder="年龄" type="number" min="3" max="120" required/>
+    <input name="grade" placeholder="年级（如：五年级）" required/>
+    <input name="gender" placeholder="性别（男/女）" pattern="^(男|女)$" title="请输入“男”或“女”" required/>
+    <input name="region" placeholder="地区（如：湖北武汉）" required/>
+    <!-- 第一次点击按钮 -->
+    <button type="button" id="startBtn">立即启程！</button>
   </form>
 
+  <!-- 强制阅读弹窗 -->
+  <div id="modalOverlay">
+    <div id="modalBox">
+      <h3>重要提示</h3>
+      <p>请仔细阅读以下信息，确保你了解冒险的基本规则与注意事项。阅读完成后15秒可继续。</p>
+      <p>亲爱的旅行者，欢迎来到这个小世界！在这一路的冒险中，你需要收集五把钥匙即可通关！<br>
+      <p>1.在这一路的冒险，需要从“南庭水郡”“沙漠遗迹”“水晶矿洞”“童话森林”“乡野村庄”五个场景中获得五把钥匙，即可通关！</p>
+      <p>2.在这一路的冒险中，你将会遇到许多新奇的生物，你可以选择通过问问题的方式与它们进行交流，我们提供四个问题供你选择，除此之外，你也可以选择自由提问！</p>
+      <p> 3.除此之外，在场景中会有“模糊对象”的出现，点击即可让这些生物变清晰！</p>
+      <p><span style="color: red;">4.只有收集五把钥匙才可帮助主角通关(获得星辰的宝藏)，过程中与任何生物、模糊对象进行交流不会有任何奖励。</span><br></p>
+        <p>加油旅行者，你的勇气和决心将会成为打开星辰宝藏的关键！</p>
+      </p>
+      <button id="continueBtn" disabled>我已阅读并继续 (<span id="timer">15</span>)</button>
+    </div>
+  </div>
+
   <script>
-    document.getElementById('nameForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const name = document.querySelector('input').value.trim();
-      const gender = document.querySelector('select').value;
-      const res = await fetch('/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, gender })
-      });
-      const { sessionId } = await res.json();
-      if (sessionId) {
-        sessionStorage.setItem('sid', sessionId);
-        location.href = '/index01.html';
-      } else alert('信息有误，请重新填写~');
+    const form   = document.getElementById('userForm');
+    const startBtn   = document.getElementById('startBtn');
+    const overlay    = document.getElementById('modalOverlay');
+    const continueBtn= document.getElementById('continueBtn');
+    const timerSpan  = document.getElementById('timer');
+
+    let canSubmit = false;
+
+    /* 第一次点击：弹出强制阅读 */
+    startBtn.addEventListener('click', () => {
+      overlay.style.display = 'flex';
+      canSubmit = false;
+      let left = 15;
+      timerSpan.textContent = left;
+
+      const countDown = setInterval(() => {
+        left--;
+        timerSpan.textContent = left;
+        if (left <= 0) {
+          clearInterval(countDown);
+          continueBtn.disabled = false;
+          continueBtn.textContent = '我已阅读并继续';
+        }
+      }, 1000);
     });
+
+    /* 第二次点击：真正注册并跳转 */
+    continueBtn.addEventListener('click', async () => {
+      if (!canSubmit) {   // 按钮可用时才能提交
+        const fd = new FormData(form);
+        const body = Object.fromEntries(fd.entries());
+
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        const { sessionId } = await res.json();
+        if (sessionId) {
+          sessionStorage.setItem('sid', sessionId);
+          location.href = '/index01.html';
+        } else {
+          alert('信息有误，请重新填写~');
+        }
+      }
+    });
+
   </script>
 </body>
 </html>
