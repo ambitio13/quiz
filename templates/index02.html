@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>水晶洞穴</title>
+  <link rel="stylesheet" href="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/css/styles02.css" />   <!-- XX=02,03... -->
+</head>
+<body>
+  <!-- 结束按钮 -->
+  <button id="finishBtn" class="finish-btn">结束今天的冒险！👋</button>
+
+  <div class="background">
+    <!-- 五个可交互块，data-hover data-click 指向两张图 -->
+    <img class="block" id="block1" data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block1_1.png"
+     data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block1_2.png"
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block1_1.png">
+    <img class="block" id="block2" data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block2_1.png"
+     data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block2_2.png"
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block2_1.png">
+    <img class="block" id="block3" data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block3_1.png"
+     data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block3_2.png"
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block3_1.png">
+    <img class="block" id="block4" data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block4_1.png"
+     data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block4_2.png"
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block4_1.png">
+    <img class="block" id="block5"data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block5_1.png"
+     data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block5_2.png"
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/block5_1.png">
+
+    <!-- 状态块（如有） -->
+    <img id="statusBlock" class="status-block"
+         src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/status0.png"
+         data-img-src0="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/status0.png"
+         data-img-src1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/status1.png"
+         data-img-src2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/status2.png"
+         data-img-src3="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index02/status3.png" />
+
+    <!-- 表单外部背景块 -->
+    <div class="quiz-outer-block">
+        <!-- 表单容器 -->
+        <div id="quizContainer" class="quiz-container">
+          <!-- 表单内部背景 -->
+          <div class="quiz-inner-background"></div>   
+          <h3 id="quizQuestion"></h3>
+          <div id="quizOptions"></div>
+          <button id="submitBtn">提交啦！✨</button>
+        </div>
+    </div>
+    <!-- 新增的表单上部图片容器 -->
+    <div class="form-top-image" >
+      <img id="formImage" src="" alt="Form Image">
+    </div>
+    <!-- 新增遮罩层 -->
+    <div id="overlay" style="display: none;"></div>
+  </div>
+
+  <!-- 答案弹层 -->
+  <div id="answerPopup" class="answer-popup">
+    <div class="answer-card">
+      <div class="answer-icon">🎉</div>
+      <div id="answerText" class="answer-text">答案加载中…</div>
+      <button id="answerClose" class="answer-close">我懂了！</button>
+    </div>
+  </div>
+
+  <script src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/js/script02.js"></script>  
+</body>
+</html>

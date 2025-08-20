@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户数据查询</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { margin-top: 30px; max-width: 1200px; }
+        .result-area { margin-top: 20px; display: none; }
+        .table-responsive { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .btn-group { margin-bottom: 20px; }
+        .pagination { margin-top: 20px; justify-content: center; }
+        .user-tabs { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>心理测评数据查询与统计</h2>
+        
+        <div class="input-group mb-3" style="max-width: 700px;">
+            <input type="text" id="userIdInput" class="form-control" placeholder="输入用户ID（留空查询全部）">
+            <button class="btn btn-primary" onclick="queryUser()">查询单个用户</button>
+            <button class="btn btn-secondary" onclick="queryAll()">查询全部用户</button>
+            <button class="btn btn-success" onclick="exportData()" style="margin-left: 10px;">导出当前数据</button>
+        </div>
+
+        <!-- 加载状态 -->
+        <div id="loading" class="alert alert-info" style="display: none;">处理中...</div>
+
+        <!-- 统计概览 -->
+        <div id="statsOverview" class="row mb-4" style="display: none;">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">总用户数</h5>
+                        <p class="card-text" id="totalUsers">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">平均总分</h5>
+                        <p class="card-text" id="avgTotalScore">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">完成率</h5>
+                        <p class="card-text" id="completionRate">0%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">数据更新时间</h5>
+                        <p class="card-text" id="lastUpdate">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分页控件 -->
+        <div id="paginationControls" class="pagination" style="display: none;">
+            <button class="btn btn-outline-primary" onclick="prevPage()">上一页</button>
+            <span id="pageInfo" class="mx-3">第 1 页</span>
+            <button class="btn btn-outline-primary" onclick="nextPage()">下一页</button>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="result-area" id="resultArea">
+            <!-- 用户选择标签页 -->
+            <div class="user-tabs">
+                <ul class="nav nav-tabs" id="userTabs" role="tablist">
+                    <!-- 动态生成用户标签 -->
+                </ul>
+                <div class="tab-content" id="userTabContent">
+                    <!-- 动态生成用户内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        let currentUserId = "";
+        let currentMode = "single"; // single 或 all
+        let currentPage = 1;
+        let totalPages = 1;
+        let allUsersData = [];
+
+        // 查询单个用户
+        function queryUser() {
+            const userId = document.getElementById("userIdInput").value.trim();
+            if (!userId) {
+                alert("请输入用户ID");
+                return;
+            }
+            
+            currentMode = "single";
+            currentUserId = userId;
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("resultArea").style.display = "none";
+            document.getElementById("paginationControls").style.display = "none";
+            document.getElementById("statsOverview").style.display = "none";
+
+            fetch('/query_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("loading").style.display = "none";
+                if (data.msg) {
+                    alert(data.msg);
+                    return;
+                }
+                renderUserTabs([data]);
+                document.getElementById("resultArea").style.display = "block";
+            })
+            .catch(err => {
+                document.getElementById("loading").style.display = "none";
+                alert("查询失败");
+            });
+        }
+
+        // 查询全部用户
+        function queryAll(page = 1) {
+            currentMode = "all";
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("resultArea").style.display = "none";
+            document.getElementById("paginationControls").style.display = "none";
+            document.getElementById("statsOverview").style.display = "none";
+
+            fetch(`/query_all?page=${page}&limit=10`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("loading").style.display = "none";
+                if (data.msg) {
+                    alert(data.msg);
+                    return;
+                }
+                
+                allUsersData = data.data;
+                currentPage = data.page;
+                totalPages = Math.ceil(data.total / data.limit);
+                
+                // 更新统计概览
+                updateStatsOverview(data.data, data.total);
+                
+                // 渲染用户标签
+                renderUserTabs(data.data);
+                
+                // 显示分页控件
+                document.getElementById("pageInfo").textContent = `第 ${currentPage} / ${totalPages} 页`;
+                document.getElementById("paginationControls").style.display = "flex";
+                document.getElementById("resultArea").style.display = "block";
+                document.getElementById("statsOverview").style.display = "flex";
+            })
+            .catch(err => {
+                document.getElementById("loading").style.display = "none";
+                alert("查询失败");
+            });
+        }
+
+        // 更新统计概览
+        function updateStatsOverview(users, total) {
+            document.getElementById("totalUsers").textContent = total;
+            
+            // 计算平均总分
+            let totalScoresSum = 0;
+            users.forEach(user => {
+                const total = user.total_scores;
+                const sum = (total.total_specific || 0) + 
+                           (total.total_cognitive || 0) + 
+                           (total.total_diversity || 0) + 
+                           (total.total_perceptual || 0);
+                totalScoresSum += sum;
+            });
+            document.getElementById("avgTotalScore").textContent = (totalScoresSum / users.length).toFixed(1);
+            
+            // 简单完成率计算（示例）
+            document.getElementById("completionRate").textContent = "100%";
+            
+            // 更新时间
+            document.getElementById("lastUpdate").textContent = new Date().toLocaleString();
+        }
+
+        // 渲染用户标签页
+        function renderUserTabs(users) {
+            const tabsContainer = document.getElementById("userTabs");
+            const contentContainer = document.getElementById("userTabContent");
+            
+            // 清空现有内容
+            tabsContainer.innerHTML = "";
+            contentContainer.innerHTML = "";
+            
+            // 为每个用户创建标签和内容
+            users.forEach((user, index) => {
+                const isActive = index === 0 ? "active" : "";
+                
+                // 创建标签
+                const tab = document.createElement("li");
+                tab.className = "nav-item";
+                tab.innerHTML = `
+                    <button class="nav-link ${isActive}" id="user-${user.user_id}-tab" 
+                            data-bs-toggle="tab" data-bs-target="#user-${user.user_id}" 
+                            type="button" role="tab">
+                        ${user.basic_info.name || user.user_id}
+                    </button>
+                `;
+                tabsContainer.appendChild(tab);
+                
+                // 创建内容
+                const content = document.createElement("div");
+                content.id = `user-${user.user_id}`;
+                content.className = `tab-pane fade ${isActive}`;
+                content.setAttribute("role", "tabpanel");
+                content.innerHTML = createUserContent(user);
+                contentContainer.appendChild(content);
+            });
+
+            // 在 renderUserTabs 函数末尾，用户标签生成后调用
+            users.forEach(user => {
+                const ctx = document.getElementById(`scoreChart-${user.user_id}`).getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['特异性', '认知性', '多样性', '知觉性'],
+                        datasets: [{
+                            label: '好奇心分数',
+                            data: [
+                                user.total_scores.total_specific || 0,
+                                user.total_scores.total_cognitive || 0,
+                                user.total_scores.total_diversity || 0,
+                                user.total_scores.total_perceptual || 0
+                            ],
+                            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0']
+                        }]
+                    }
+                });
+            });
+        }
+
+        // 创建单个用户的内容
+        function createUserContent(user) {
+            const basic = user.basic_info;
+            const total = user.total_scores;
+            
+            return `
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>用户ID: ${user.user_id}</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 基本信息 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>基本信息</h6>
+                                <p>姓名：${basic.name || '未知'}</p>
+                                <p>性别：${basic.gender || '未知'}</p>
+                                <p>年龄：${basic.age || '未知'}</p>
+                                <p>年级：${basic.grade || '未知'}</p>
+                                <p>地区：${basic.region || '未知'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>总分统计</h6>
+                                <p>特异性好奇心总分：${total.total_specific || 0}</p>
+                                <p>认知性好奇心总分：${total.total_cognitive || 0}</p>
+                                <p>多样性好奇心总分：${total.total_diversity || 0}</p>
+                                <p>知觉性好奇心总分：${total.total_perceptual || 0}</p>
+                                <canvas id="scoreChart-${user.user_id}" height="150"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 各地图分数 -->
+                        <div class="mt-4">
+                            <h6>各地图分数详情</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead><tr>
+                                        <th>地图</th>
+                                        <th>特异性好奇心</th>
+                                        <th>认知性好奇心</th>
+                                        <th>多样性好奇心</th>
+                                        <th>知觉性好奇心</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        ${Object.keys(user.map_scores).map(page => {
+                                            const score = user.map_scores[page];
+                                            return `
+                                                <tr>
+                                                    <td>${page}</td>
+                                                    <td>${score.specific_score}</td>
+                                                    <td>${score.cognitive_score}</td>
+                                                    <td>${score.diversity_score}</td>
+                                                    <td>${score.perceptual_score}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- 答题记录 -->
+                        <div class="mt-4">
+                            <h6>答题记录</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead><tr>
+                                        <th>地图</th>
+                                        <th>对象</th>
+                                        <th>选择的选项（A/B/C/D）</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        ${Object.keys(user.answers).map(page => {
+                                            const pageAnswers = user.answers[page];
+                                            return Object.keys(pageAnswers).map(obj => {
+                                                const ans = JSON.parse(pageAnswers[obj] || "[]");
+                                                return `
+                                                    <tr>
+                                                        <td>${page}</td>
+                                                        <td>${obj}</td>
+                                                        <td>${ans.join(', ') || '无记录'}</td>
+                                                    </tr>
+                                                `;
+                                            }).join('');
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 分页控制
+        function prevPage() {
+            if (currentPage > 1) {
+                queryAll(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                queryAll(currentPage + 1);
+            }
+        }
+
+        // 导出数据
+        function exportData() {
+            document.getElementById("loading").style.display = "block";
+            
+            if (currentMode === "single" && currentUserId) {
+                // 导出单个用户
+                fetch('/export_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId })
+                })
+                .then(res => res.blob())
+                .then(blob => {
+                    document.getElementById("loading").style.display = "none";
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${currentUserId}_data.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(err => {
+                    document.getElementById("loading").style.display = "none";
+                    alert("导出失败");
+                });
+            } else {
+                // 导出全部用户
+                fetch('/export_all')
+                .then(res => res.blob())
+                .then(blob => {
+                    document.getElementById("loading").style.display = "none";
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `all_users_data_${new Date().toLocaleDateString()}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(err => {
+                    document.getElementById("loading").style.display = "none";
+                    alert("导出失败");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+    

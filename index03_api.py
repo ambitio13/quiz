@@ -5,7 +5,7 @@ import mysql.connector
 from config import DB  # 导入 DB 配置
 from score_utils import calculate_scores, update_score_tables  # 新增导入
 
-index01_bp = Blueprint('index01', __name__)
+index03_bp = Blueprint('index03', __name__)
 
 def _get_session(sid):
     return redis_get(f"session:{sid}")
@@ -13,18 +13,24 @@ def _get_session(sid):
 def _save_session(sid, session_obj):
     redis_set(f"session:{sid}", session_obj, ex=3600)
 
-@index01_bp.route('/status_click_index01', methods=['POST'])
+
+
+@index03_bp.route('/status_click_index03', methods=['POST'])
 def status_click():
     data = request.json
     sid, cnt = data.get('sessionId'), data.get('count')
     sess = _get_session(sid)
+    print("DEBUG sid:", sid)
+    print("DEBUG cnt:", cnt)
+    print("DEBUG session data:", sess)
+    cnt = int(data.get('count', 0))
     if not sess or cnt not in {1, 2, 3}:
         return jsonify({"msg": "invalid"}), 400
     sess['status_clicks'] = cnt
     _save_session(sid, sess)
     return jsonify({"msg": "ok"})
 
-@index01_bp.route('/answer_index01', methods=['POST'])
+@index03_bp.route('/answer_index03', methods=['POST'])
 def collect_answer():
     data = request.json
     sid, block, key = data.get('sessionId'), data.get('block'), data.get('key')
@@ -38,16 +44,16 @@ def collect_answer():
     _save_session(sid, sess)
     return jsonify({"msg": "ok"})
 
-@index01_bp.route('/finish_index01', methods=['POST'])
-def finish_index01():
+@index03_bp.route('/finish_index03', methods=['POST'])
+def finish_index03():
+    print("finish payload:", request.json)
     data = request.json
     sid = data.get('sessionId')
-    sess = _get_session(sid)
+    sess = redis_get(f"session:{sid}")
     if not sess:
         return jsonify({"msg": "no session"}), 400
     
     # 关键修改：从会话中获取用户注册时生成的唯一user_id
-    # （该ID在用户注册时存入Redis，贯穿所有页面）
     user_id = sess.get("user_id")
     if not user_id:
         # 异常处理：若会话中无user_id，生成临时ID并记录警告
@@ -58,39 +64,62 @@ def finish_index01():
     status_clicks = sess.get('status_clicks', 0)
 
     # 拼 SQL 参数（与原逻辑一致）
-    empty_answers = {k: [] for k in ["tree", "fish", "stone", "moss", "stream"]}
+    empty_answers = {k: [] for k in [
+        "island", "photosynthesis", "water_cycle",
+        "rock_weathering", "bird_flock", "traditional_arch"
+    ]}
+
     answers = {k: json.dumps(sess["answers"].get(k, empty_answers[k])) for k in empty_answers}
     counts = {
-        k: "|".join(f"{kk}:{vv}" for kk, vv in sess["counts"].get(k, {"A":0,"B":0,"C":0,"D":0}).items())
-        for k in ["tree","fish","stone","moss","stream"]
+        k: "|".join(f"{kk}:{vv}" for kk, vv in
+                    sess["counts"].get(k, {"A":0,"B":0,"C":0,"D":0}).items())
+        for k in empty_answers
     }
 
-    # 计算得分并更新数据库（使用统一user_id）
-    scores = calculate_scores("index01", sess)
+    # 新增：计算得分并更新数据库
+    scores = calculate_scores("index03", sess)
     update_score_tables(
-        page="index01",
+        page="index03",
         user_id=user_id,  # 传入统一用户ID
         user_name=sess["name"],
         gender=sess["gender"],
         scores=scores
     )
 
-    # 插入index01表时使用统一user_id作为主键
     sql = """
-    INSERT INTO index01
-    (id,name,gender,duration,
-     tree_answers,fish_answers,stone_answers,moss_answers,stream_answers,
-     tree_counts,fish_counts,stone_counts,moss_counts,stream_counts,
+    INSERT INTO index03
+    (id, name, gender, duration,
+     island_answers, photosynthesis_answers, water_cycle_answers,
+     rock_weathering_answers, bird_flock_answers, traditional_arch_answers,
+     island_counts, photosynthesis_counts, water_cycle_counts,
+     rock_weathering_counts, bird_flock_counts, traditional_arch_counts,
      status_clicks)
-    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    VALUES
+    (%s,%s,%s,%s,
+     %s,%s,%s,%s,%s,%s,
+     %s,%s,%s,%s,%s,%s,%s)
     """
+
+    # 4. 调整参数顺序（与SQL字段顺序一致）
     params = (
         user_id,  # 关键修改：使用统一用户ID
-        sess["name"], 
-        sess["gender"], 
+        sess["name"],
+        sess["gender"],
         duration,
-        answers["tree"], answers["fish"], answers["stone"], answers["moss"], answers["stream"],
-        counts["tree"], counts["fish"], counts["stone"], counts["moss"], counts["stream"],
+        # 答案字段（按SQL顺序）
+        answers["island"],
+        answers["photosynthesis"],
+        answers["water_cycle"],
+        answers["rock_weathering"],
+        answers["bird_flock"],
+        answers["traditional_arch"],
+        # 计数字段（按SQL顺序）
+        counts["island"],
+        counts["photosynthesis"],
+        counts["water_cycle"],
+        counts["rock_weathering"],
+        counts["bird_flock"],
+        counts["traditional_arch"],
         status_clicks
     )
     try:
@@ -101,8 +130,11 @@ def finish_index01():
         cur.close()
         cnx.close()
     except Exception as e:
+        print(e)
         return jsonify({"msg": str(e)}), 500
 
+    # 完成后清掉 Redis
+    # redis_delete(f"session:{sid}")
     return jsonify({
         "msg": "saved",
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪
