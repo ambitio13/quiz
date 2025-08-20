@@ -93,11 +93,12 @@ def finish_index03():
      rock_weathering_answers, bird_flock_answers, traditional_arch_answers,
      island_counts, photosynthesis_counts, water_cycle_counts,
      rock_weathering_counts, bird_flock_counts, traditional_arch_counts,
-     status_clicks)
+     status_clicks,island_ask, photosynthesis_ask, water_cycle_ask,
+    rock_weathering_ask, bird_flock_ask, traditional_arch_ask)
     VALUES
     (%s,%s,%s,%s,
      %s,%s,%s,%s,%s,%s,
-     %s,%s,%s,%s,%s,%s,%s)
+     %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """
 
     # 4. 调整参数顺序（与SQL字段顺序一致）
@@ -120,7 +121,14 @@ def finish_index03():
         counts["rock_weathering"],
         counts["bird_flock"],
         counts["traditional_arch"],
-        status_clicks
+        status_clicks,
+
+        sess["ask_counts"].get("island", 0),
+        sess["ask_counts"].get("photosynthesis", 0),
+        sess["ask_counts"].get("water_cycle", 0),
+        sess["ask_counts"].get("rock_weathering", 0),
+        sess["ask_counts"].get("bird_flock", 0),
+        sess["ask_counts"].get("traditional_arch", 0),
     )
     try:
         cnx = mysql.connector.connect(**DB)
@@ -140,3 +148,20 @@ def finish_index03():
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪
         "scores": scores
     })
+
+@index03_bp.route('/record_ask_index03', methods=['POST'])
+def record_ask_index03():
+    data = request.json
+    sid   = data.get('sessionId')
+    block = data.get('block')
+    sess  = _get_session(sid)
+    valid_blocks = ["island", "photosynthesis", "water_cycle",
+                    "rock_weathering", "bird_flock", "traditional_arch"]
+    if not sess or block not in valid_blocks:
+        return jsonify({"msg": "invalid"}), 400
+
+    sess.setdefault("ask_counts", {})
+    sess["ask_counts"].setdefault(block, 0)
+    sess["ask_counts"][block] += 1
+    _save_session(sid, sess)
+    return jsonify({"msg": "ok"})

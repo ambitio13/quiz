@@ -91,39 +91,73 @@ def finish_index05():
     # 3. 乡野村庄SQL语句
     sql = """
     INSERT INTO index05
-    (id, name, gender, duration,
-     wooden_house_answers, winding_path_answers, tall_tree_answers,
-     stream_step_answers, roof_flag_answers, glowing_window_answers,
-     wooden_house_counts, winding_path_counts, tall_tree_counts,
-     stream_step_counts, roof_flag_counts, glowing_window_counts,
-     status_clicks)
-    VALUES
-    (%s,%s,%s,%s,
-     %s,%s,%s,%s,%s,%s,
-     %s,%s,%s,%s,%s,%s,%s)
+        (
+        id,
+        name,
+        gender,
+        duration,
+        wooden_house_answers,
+        winding_path_answers,
+        tall_tree_answers,
+        stream_step_answers,
+        roof_flag_answers,
+        glowing_window_answers,
+        wooden_house_counts,
+        winding_path_counts,
+        tall_tree_counts,
+        stream_step_counts,
+        roof_flag_counts,
+        glowing_window_counts,
+        status_clicks,
+        wooden_house_ask,
+        winding_path_ask,
+        tall_tree_ask,
+        stream_step_ask,
+        roof_flag_ask,
+        glowing_window_ask
+        )
+        VALUES
+        (
+        %s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s
+        )
     """
 
     # 4. 适配新字段的参数
     params = (
-        user_id,  # 关键修改：使用统一用户ID
+        user_id,
         sess["name"],
         sess["gender"],
         duration,
-        # 答案字段（按SQL顺序）
+
+        # 答案字段
         answers["wooden_house"],
         answers["winding_path"],
         answers["tall_tree"],
         answers["stream_step"],
         answers["roof_flag"],
         answers["glowing_window"],
-        # 计数字段（按SQL顺序）
+
+        # 计数字段
         counts["wooden_house"],
         counts["winding_path"],
         counts["tall_tree"],
         counts["stream_step"],
         counts["roof_flag"],
         counts["glowing_window"],
-        status_clicks
+
+        # 知觉点击
+        status_clicks,
+
+        # “我还想问”次数
+        sess["ask_counts"].get("wooden_house", 0),
+        sess["ask_counts"].get("winding_path", 0),
+        sess["ask_counts"].get("tall_tree", 0),
+        sess["ask_counts"].get("stream_step", 0),
+        sess["ask_counts"].get("roof_flag", 0),
+        sess["ask_counts"].get("glowing_window", 0),
     )
     try:
         cnx = mysql.connector.connect(**DB)
@@ -143,3 +177,21 @@ def finish_index05():
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪
         "scores": scores
     })
+
+@index05_bp.route('/record_ask_index05', methods=['POST'])
+def record_ask_index05():
+    data = request.json
+    print("【DEBUG index05】received:", data)       # ← 加这一行
+    sid   = data.get('sessionId')
+    block = data.get('block')
+    sess  = _get_session(sid)
+    valid_blocks = ["wooden_house", "winding_path", "tall_tree",
+                    "stream_step", "roof_flag", "glowing_window"]
+    if not sess or block not in valid_blocks:
+        return jsonify({"msg": "invalid"}), 400
+
+    sess.setdefault("ask_counts", {})
+    sess["ask_counts"].setdefault(block, 0)
+    sess["ask_counts"][block] += 1
+    _save_session(sid, sess)
+    return jsonify({"msg": "ok"})

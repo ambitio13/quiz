@@ -7,7 +7,7 @@
 </head>
 <body>
   <!-- 结束按钮 -->
-  <button id="finishBtn" class="finish-btn">结束今天的冒险！👋</button>
+  <button id="finishBtn" class="finish-btn">前往下一处冒险！👋</button>
 
   <div class="background">
     <!-- 五个可交互块，data-hover data-click 指向两张图 -->
@@ -48,6 +48,21 @@
           <div id="quizOptions"></div>
           <button id="submitBtn">提交啦！✨</button>
         </div>
+        <button id="chatTrigger" style="position:absolute; top:20px; right:20px; padding:8px 16px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">
+          我还想问
+        </button>
+    </div>
+       <!-- 新增对话弹窗 -->
+    <div id="chatPopup" class="chat-popup">
+      <div class="chat-card">
+        <h3>与智者对话</h3>
+        <div id="chatHistory" class="chat-history"></div>
+        <input type="text" id="chatInput" placeholder="输入你的问题...">
+        <div class="chat-buttons">
+          <button id="sendChat">发送</button>
+          <button id="closeChat" style="display: none;">结束对话</button>
+        </div>
+      </div>
     </div>
     <!-- 新增的表单上部图片容器 -->
     <div class="form-top-image" >

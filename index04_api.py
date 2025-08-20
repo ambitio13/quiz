@@ -89,39 +89,73 @@ def finish_index04():
 
     sql = """
     INSERT INTO index04
-    (id, name, gender, duration,
-     desert_landform_answers, desert_rock_answers, desert_plant_answers,
-     oasis_answers, camel_answers, ancient_civilization_answers,
-     desert_landform_counts, desert_rock_counts, desert_plant_counts,
-     oasis_counts, camel_counts, ancient_civilization_counts,
-     status_clicks)
-    VALUES
-    (%s,%s,%s,%s,
-     %s,%s,%s,%s,%s,%s,
-     %s,%s,%s,%s,%s,%s,%s)
+        (
+        id,
+        name,
+        gender,
+        duration,
+        desert_landform_answers,
+        desert_rock_answers,
+        desert_plant_answers,
+        oasis_answers,
+        camel_answers,
+        ancient_civilization_answers,
+        desert_landform_counts,
+        desert_rock_counts,
+        desert_plant_counts,
+        oasis_counts,
+        camel_counts,
+        ancient_civilization_counts,
+        status_clicks,
+        desert_landform_ask,
+        desert_rock_ask,
+        desert_plant_ask,
+        oasis_ask,
+        camel_ask,
+        ancient_civilization_ask
+        )
+        VALUES
+        (
+        %s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s
+        )
     """
 
     # 4. 调整参数顺序（与SQL字段顺序一致）
     params = (
-        user_id,  # 关键修改：使用统一用户ID
+        user_id,
         sess["name"],
         sess["gender"],
         duration,
-        # 答案字段（按SQL顺序）
+
+        # 答案字段
         answers["desert_landform"],
         answers["desert_rock"],
         answers["desert_plant"],
         answers["oasis"],
         answers["camel"],
         answers["ancient_civilization"],
-        # 计数字段（按SQL顺序）
+
+        # 计数字段
         counts["desert_landform"],
         counts["desert_rock"],
         counts["desert_plant"],
         counts["oasis"],
         counts["camel"],
         counts["ancient_civilization"],
-        status_clicks
+
+        # 知觉点击
+        status_clicks,
+
+        # “我还想问”次数
+        sess["ask_counts"].get("desert_landform", 0),
+        sess["ask_counts"].get("desert_rock", 0),
+        sess["ask_counts"].get("desert_plant", 0),
+        sess["ask_counts"].get("oasis", 0),
+        sess["ask_counts"].get("camel", 0),
+        sess["ask_counts"].get("ancient_civilization", 0),
     )
     try:
         cnx = mysql.connector.connect(** DB)
@@ -139,3 +173,20 @@ def finish_index04():
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪
         "scores": scores
     })
+
+@index04_bp.route('/record_ask_index04', methods=['POST'])
+def record_ask_index04():
+    data = request.json
+    sid   = data.get('sessionId')
+    block = data.get('block')
+    sess  = _get_session(sid)
+    valid_blocks = ["desert_landform", "desert_rock", "desert_plant",
+                    "oasis", "camel", "ancient_civilization"]
+    if not sess or block not in valid_blocks:
+        return jsonify({"msg": "invalid"}), 400
+
+    sess.setdefault("ask_counts", {})
+    sess["ask_counts"].setdefault(block, 0)
+    sess["ask_counts"][block] += 1
+    _save_session(sid, sess)
+    return jsonify({"msg": "ok"})

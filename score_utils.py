@@ -28,7 +28,10 @@ def calculate_scores(page, sess):
                 scores["specific"] += SPECIFIC_SCORE[ans]
             elif ans == "D":
                 scores["cognitive"] += COGNITIVE_SCORE
-
+        # （2）新增：“我还想问”次数得分
+        ask_count = sess["ask_counts"].get(obj, 0)
+        scores["specific"] += ask_count * SPECIFIC_SCORE["ask"]
+        
     # 2. 多样性分数（交互对象数量）
     scores["diversity"] = len(interacted) * DIVERSITY_SCORE
 

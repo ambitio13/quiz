@@ -100,7 +100,47 @@ def register_user():
                 "glowing_window"
             ]
         },
-        "status_clicks": 0
+        "status_clicks": 0,
+        "ask_counts": {
+         # index01
+            "tree": 0,
+            "fish": 0,
+            "stone": 0,
+            "moss": 0,
+            "stream": 0,
+
+            # index02
+            "warm_room": 0,
+            "echo_horn": 0,
+            "dark_chef": 0,
+            "glow_bug": 0,
+            "rock_grandpa": 0,
+
+            # index03
+            "island": 0,
+            "photosynthesis": 0,
+            "water_cycle": 0,
+            "rock_weathering": 0,
+            "bird_flock": 0,
+            "traditional_arch": 0,
+
+            # index04
+            "desert_landform": 0,
+            "desert_rock": 0,
+            "desert_plant": 0,
+            "oasis": 0,
+            "camel": 0,
+            "ancient_civilization": 0,
+
+            # index05
+            "wooden_house": 0,
+            "winding_path": 0,
+            "tall_tree": 0,
+            "stream_step": 0,
+            "roof_flag": 0,
+            "glowing_window": 0
+        }
     }
     redis_set(f"session:{sid}", session_obj, ex=3600)  # 1 小时过期
+    print(f"DEBUG Saving session to Redis: {redis_get(f'session:{sid}')}")
     return jsonify({"sessionId": sid})

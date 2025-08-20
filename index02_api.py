@@ -103,11 +103,12 @@ def finish_index02():
     dark_chef_counts,
     glow_bug_counts,
     rock_grandpa_counts,
-    status_clicks)
+    status_clicks,
+    warm_room_ask, echo_horn_ask, dark_chef_ask, glow_bug_ask, rock_grandpa_ask)
     VALUES
     (%s,%s,%s,%s,
     %s,%s,%s,%s,%s,
-    %s,%s,%s,%s,%s,%s)
+    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """
     params = (
         user_id,  # 关键修改：使用统一用户ID
@@ -128,7 +129,13 @@ def finish_index02():
         counts["glow_bug"],
         counts["rock_grandpa"],
 
-        status_clicks
+        status_clicks,
+
+        sess["ask_counts"].get("warm_room", 0),
+        sess["ask_counts"].get("echo_horn", 0),
+        sess["ask_counts"].get("dark_chef", 0),
+        sess["ask_counts"].get("glow_bug", 0),
+        sess["ask_counts"].get("rock_grandpa", 0)
     )
     try:
         cnx = mysql.connector.connect(** DB)
@@ -146,3 +153,20 @@ def finish_index02():
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪
         "scores": scores
     })
+
+
+@index02_bp.route('/record_ask_index02', methods=['POST'])
+def record_ask_index02():
+    data = request.json
+    sid   = data.get('sessionId')
+    block = data.get('block')         # 期望是 warm_room / echo_horn ...
+    sess  = _get_session(sid)
+    valid_blocks = ["warm_room", "echo_horn", "dark_chef", "glow_bug", "rock_grandpa"]
+    if not sess or block not in valid_blocks:
+        return jsonify({"msg": "invalid"}), 400
+
+    sess.setdefault("ask_counts", {})
+    sess["ask_counts"].setdefault(block, 0)
+    sess["ask_counts"][block] += 1
+    _save_session(sid, sess)
+    return jsonify({"msg": "ok"})
