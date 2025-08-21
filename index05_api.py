@@ -170,8 +170,7 @@ def finish_index05():
         print(e)
         return jsonify({"msg": str(e)}), 500
 
-    # 完成后清掉 Redis
-    # redis_delete(f"session:{sid}")
+    
     return jsonify({
         "msg": "saved",
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪

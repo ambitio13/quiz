@@ -4,11 +4,23 @@
   <meta charset="UTF-8" />
   <title>岛屿</title>
   <link rel="stylesheet" href="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/css/styles04.css" />   
+  <link rel="stylesheet" href="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/css/key.css" />
 </head>
 <body>
   <!-- 结束按钮 -->
   <button id="finishBtn" class="finish-btn">前往下一处冒险！👋</button>
-
+<!-- 进度指示器 -->
+<div class="key-progress">
+    钥匙收集进度
+    <div class="key-indicators">
+        <span class="key-indicator"></span>
+        <span class="key-indicator"></span>
+        <span class="key-indicator"></span>
+        <span class="key-indicator"></span>
+        <span class="key-indicator"></span>
+    </div>
+    <div class="key-count">已收集 0/5 把钥匙</div>
+</div>
   <div class="background">
     <!-- 五个可交互块，data-hover data-click 指向两张图 -->
     <img class="block" id="block1" data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index04/block1_1.png"
@@ -29,7 +41,13 @@
      <img class="block" id="block6"data-1="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index04/block6_1.png"
      data-2="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index04/block6_2.png"
      src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index04/block6_1.png">
-
+<img id="key" 
+     class="key-object" 
+     data-page="index04"
+     data-default="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/keys/index04_key_uncollected.png"  
+     data-collected="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/keys/index04_key_collected.png"    
+     src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/keys/index04_key_uncollected.png" 
+     style="top: 450px; left: 350px;" />
     <!-- 状态块（如有） -->
     <img id="statusBlock" class="status-block"
          src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/img/index04/status0.png"
@@ -48,8 +66,8 @@
           <div id="quizOptions"></div>
           <button id="submitBtn">提交啦！✨</button>
         </div>
-        <button id="chatTrigger" style="position:absolute; top:20px; right:20px; padding:8px 16px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">
-          我还想问
+        <button id="chatTrigger" style="position:absolute; z-index: 999; top:120px; right:60px; padding:6px 12px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">
+          我还有其他问题想问
         </button>
     </div>
        <!-- 新增对话弹窗 -->
@@ -81,6 +99,7 @@
     </div>
   </div>
 
-  <script src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/js/script04.js"></script>  
+  <script src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/js/script04.js"></script> 
+  <script src="https://xingli-quiz.oss-cn-hangzhou.aliyuncs.com/static/js/key.js"></script> 
 </body>
 </html>

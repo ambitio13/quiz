@@ -147,7 +147,6 @@ def finish_index02():
     except Exception as e:
         print(e)
         return jsonify({"msg": str(e)}), 500
-
     return jsonify({
         "msg": "saved",
         "user_id": user_id,  # 返回统一用户ID，便于前端跟踪

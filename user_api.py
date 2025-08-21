@@ -101,6 +101,13 @@ def register_user():
             ]
         },
         "status_clicks": 0,
+        "key_collection": {
+            "index01": False,
+            "index02": False,
+            "index03": False,
+            "index04": False,
+            "index05": False
+        },
         "ask_counts": {
          # index01
             "tree": 0,
